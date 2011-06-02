@@ -1,0 +1,4 @@
+name = Tender App SSO
+description = Generates a Tender App Single Sign On Link
+package = Support
+core = 6.x

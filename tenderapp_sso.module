@@ -1,19 +1,26 @@
 <?php
 
-function multipass_help($path, $arg) {
+/**
+ * Implementation of hook_help().
+ */
+function tenderapp_sso_help($path, $arg) {
   switch ($path) {
-    case 'admin/help#multipass':
-      return '<p>' . t('The Multipass Module lets you easily generate a Multipass link in any one of your theme templates') . '</p>';
+    case 'admin/help#tenderapp_sso':
+      return '<p>' . t('The Tender App SSO Module lets you easily generate a Multipass link in any one of your theme templates') . '</p>';
   }
 }
 
-function multipass_theme() {
+/**
+ * Implementation of hook_theme().
+ */
+function tenderapp_sso_theme() {
   return array(
     'multipass' => array(
       'arguments' => array('link' => NULL, 'sso_key' => NULL, 'key' => NULL, 'anchor_text' => "Support"),
     ),
   );
 }
+
 /**
  * Generates the Tender API Key
  *
@@ -24,20 +31,20 @@ function multipass_theme() {
  * @return void
  * @author Kenny Meyers
  */
-function theme_multipass($link, $sso_key, $key, $anchor_text="Support") {
+function theme_multipass($link, $sso_key, $key, $anchor_text = "Support") {
   global $user;
 
   //Checks to see if a tender link was even entered
-  if (!$link = str_replace("http://", "", $link)) { 
-    drupal_set_message( t("You haven't entered your Tender App URL"), "error"); 
+  if (!$link = str_replace("http://", "", $link)) {
+    drupal_set_message( t("You haven't entered your Tender App URL"), "error");
     return;
   }
-  
+
   if ($key == "") {
     drupal_set_message( t("You haven't entered your Tender Key"));
     return;
   }
-  elseif ($sso_key=="") {
+  elseif ($sso_key == "") {
     drupal_set_message( t("You haven't entered your SSO API Key"));
     return;
   }
@@ -46,7 +53,7 @@ function theme_multipass($link, $sso_key, $key, $anchor_text="Support") {
     echo  '<a href="http://' . $link . '">' . $anchor_text . '</a>';
     return;
   }
-  
+
   //Is the user's email setup?
   if ($user->mail == "") {
     drupal_set_message( t("You must be logged in for support"), "error");
@@ -62,7 +69,7 @@ function theme_multipass($link, $sso_key, $key, $anchor_text="Support") {
     'expires'   => date("Y-m-d H:i:s", strtotime("+30 minutes")),
     'trusted'   => TRUE,
   );
-  
+
   //Finally generate the Tender URL
   echo '<a href="http://' . $link  . _getTenderLink($tender_params) . '">' . $anchor_text . '</a>';
 }
@@ -71,27 +78,27 @@ function theme_multipass($link, $sso_key, $key, $anchor_text="Support") {
  * Generates a Tender API link, accepting parameters and doing all the
  * hashing, security-ing, and modify-ing.
  *
- * @param array $params 
+ * @param array $params
  * @return void
  */
 function _getTenderLink($params) {
-  $hash= hash('sha1', $params['sso_key'] . $params['site_key'], TRUE);
-  
+  $hash = hash('sha1', $params['sso_key'] . $params['site_key'], TRUE);
+
   //Remove the API & SSO Key from the Params
   unset($params['sso_key']);
-  unset($params['site_key']); 
-  
-  $saltedHash = substr($hash, 0, 16);
-  
+  unset($params['site_key']);
+
+  $saltedHash = drupal_substr($hash, 0, 16);
+
   $iv= "OpenSSL for Ruby";
 
   $data = json_encode($params);
-  
+
   for ($i = 0; $i < 16; $i++) {
       $data[$i] = $data[$i] ^ $iv[$i];
   }
 
-  $pad = 16 - (strlen($data) % 16);
+  $pad = 16 - (drupal_strlen($data) % 16);
   $data = $data . str_repeat(chr($pad), $pad);
   $cipher = mcrypt_module_open(MCRYPT_RIJNDAEL_128, '', 'cbc', '');
   mcrypt_generic_init($cipher, $saltedHash, $iv);
@@ -99,6 +106,6 @@ function _getTenderLink($params) {
   mcrypt_generic_deinit($cipher);
 
   $multipass = urlencode(base64_encode($encryptedData));
-  
+
   return "?sso={$multipass}";
 }

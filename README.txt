@@ -1,6 +1,6 @@
 Installation
 ------------
-Copy the multipass folder to your module directory and then enable it on the admin modules page.
+Copy the tenderapp_sso folder to your module directory and then enable it on the admin modules page.
 
 Description
 -----------
